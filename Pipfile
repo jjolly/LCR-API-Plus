@@ -15,10 +15,10 @@ statsmodels = "*"
 ipykernel = "*"
 nbformat = "*"
 nbconvert = "*"
-kaleido = "==0.1.0.post1"
+kaleido = "*"
 
 [dev-packages]
 notebook = "*"
 
 [requires]
-python_version = "3.10"
+python_version = "3.11"
