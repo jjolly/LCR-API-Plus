@@ -1,5 +1,6 @@
 import logging
 import requests
+import selenium
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -32,7 +33,7 @@ class InvalidCredentialsError(Exception):
 
 
 class API:
-    def __init__(self, username, password, unit_number, beta=False, driver=None):
+    def __init__(self, username, password, unit_number, beta=False, driver=None, authkey=None):
         self.unit_number = unit_number
         self.session = requests.Session()
         if not driver:
@@ -43,33 +44,56 @@ class API:
         self.beta = beta
         self.host = BETA_HOST if beta else HOST
 
-        self._login(username, password)
+        self._login(username, password, authkey=authkey)
 
-    def _login(self, user, password):
+    def _login(self, user, password, authkey=None):
         _LOGGER.info("Logging in")
 
         # Navigate to the login page
         self.driver.get(f"https://{LCR_DOMAIN}")
 
         # Enter the username
+        elem_xpath = "//input[@name='identifier']"
         login_input = WebDriverWait(self.driver, TIMEOUT).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, "#input28"))
+            ec.presence_of_element_located((By.XPATH, elem_xpath))
         )
         login_input.send_keys(user)
         login_input.submit()
 
         # Enter password
+        elem_xpath = "//input[@type='password']"
         password_input = WebDriverWait(self.driver, TIMEOUT).until(
-            ec.presence_of_element_located((By.CSS_SELECTOR, ".password-with-toggle"))
+            ec.presence_of_element_located((By.XPATH, elem_xpath))
         )
         password_input.send_keys(password)
         password_input.submit()
 
-        WebDriverWait(self.driver, TIMEOUT).until(
-            ec.presence_of_element_located(
-                (By.CSS_SELECTOR, "platform-header.PFshowHeader")
-            )
+        elem_xpath = "//input[@autocomplete='one-time-code']"
+        WebDriverWait(self.driver, TIMEOUT).until(lambda driver:
+               driver.find_element(By.XPATH, elem_xpath) or
+               driver.find_element(By.CSS_SELECTOR, "platform-header.PFshowHeader")
         )
+
+        with open("beforepage.html", "w") as bp:
+            bp.write(self.driver.page_source)
+
+        auth_input = self.driver.find_element(By.XPATH, elem_xpath)
+
+        if auth_input:
+            if not authkey:
+                raise ValueError('Authenticator key expected but not provided')
+            auth_input.send_keys(authkey)
+            auth_input.submit()
+
+            try:
+                WebDriverWait(self.driver, TIMEOUT).until(
+                    ec.presence_of_element_located(
+                        (By.CSS_SELECTOR, "platform-header.PFshowHeader")
+                    )
+                )
+            except selenium.common.exceptions.TimeoutException:
+                with open("afterpage.html", "w") as ap:
+                    ap.write(self.driver.page_source)
 
         # Get authState parameter.
         cookies = self.driver.get_cookies()
