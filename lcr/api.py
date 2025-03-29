@@ -131,6 +131,20 @@ class API:
         result = self._make_request(request)
         return result.json()
 
+    def get_member_info(self, member_id):
+        """
+        member_id comes from the `legacyCmisId` field for the member from the
+        `member-list` data. This can also be the member uuid.
+        """
+        _LOGGER.info("Getting member info for {}".format(member_id))
+        request = {
+            "url": "https://{}/api/records/member-profile/service/{}".format(LCR_DOMAIN, member_id),
+            "params": {"lang": "eng"},
+        }
+
+        result = self._make_request(request)
+        return result.json()
+
     def individual_photo(self, member_id):
         """
         member_id is not the same as Mrn
