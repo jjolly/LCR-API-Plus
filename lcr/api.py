@@ -289,3 +289,17 @@ class API:
         for encoded_quarter in result.json():
             quarters.append(Quarter(encoded_quarter))
         return quarters
+
+    def get_certs(self, member_id):
+        """
+        Get cerificate list for the member specified by member_id
+        Does not accept uuid (29 Mar 2025)
+        """
+        _LOGGER.info(f"Getting certificates for member id {member_id}")
+
+        request = {
+            "url": f"https://{LCR_DOMAIN}/api/certification/{member_id}/documents",
+            "params": {"lang": "eng",},
+        }
+        result = self._make_request(request)
+        return result.json()
