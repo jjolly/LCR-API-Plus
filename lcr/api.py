@@ -312,6 +312,31 @@ class API:
             quarters.append(Quarter(encoded_quarter))
         return quarters
 
+    def new_cert(self, member_id, doc_name, doc_id="", exp_date=None):
+        """
+        Create a new certificate for the member specified by member_id
+        """
+        _LOGGER.info(f"Creating certificate for member id {member_id}");
+
+        data = {
+            "documentName": doc_name,
+            "issuerDocumentId": doc_id,
+            "expirationDate": exp_date,
+        }
+
+        headers = {
+            "Content-Disposition": 'form-data; name="data"'
+        }
+
+        request = {
+            "url": f"https://{LCR_DOMAIN}/api/file/upload/records/member-profile/person-document",
+            "params": {"id": f"{member_id}", "lang": "eng",},
+            "headers": headers,
+            "json": data,
+        }
+        result = self._make_post(request)
+        return result.json()
+
     def get_certs(self, member_id):
         """
         Get cerificate list for the member specified by member_id
