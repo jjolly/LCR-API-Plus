@@ -126,6 +126,17 @@ class API:
         response.raise_for_status()  # break on any non 200 status
         return response
 
+    def _make_delete(self, request):
+        if self.beta:
+            request["cookies"] = {
+                "clerk-resources-beta-terms": "4.1",
+                "clerk-resources-beta-eula": "4.2",
+            }
+
+        response = self.session.delete(**request)
+        response.raise_for_status()  # break on any non 200 status
+        return response
+
     def birthday_list(self, month, months=1):
         _LOGGER.info("Getting birthday list")
         request = {
@@ -325,7 +336,7 @@ class API:
         doc_id: (optional) document identifier number
         exp_date: (optional) certificate expiration date. Can be YYYYMMDD formatted or None
         """
-        _LOGGER.info(f"Setting cert data for {cert_id}")
+        _LOGGER.info(f"Setting cert data for member id {member_id} certificate id {cert_id}")
 
         data = {
             "documentName": doc_name,
@@ -339,4 +350,20 @@ class API:
             "json": data,
         }
         result = self._make_post(request)
+        return result.json()
+
+    def del_cert(self, member_id, cert_id):
+        """
+        Delete member certificate
+        params:
+        member_id: legacy CMIS ID
+        cert_id: uuid certificate id to delete
+        """
+        _LOGGER.info(f"Deleting cert for member id {member_id} certificate id {cert_id}")
+
+        request = {
+                "url": f"https://{LCR_DOMAIN}/api/records/member-profile/person-document/{member_id}/document/{cert_id}",
+            "params": {"lang": "eng",},
+        }
+        result = self._make_delete(request)
         return result.json()
